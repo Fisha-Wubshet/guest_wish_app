@@ -11,19 +11,28 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      # --- FIX: ADDED FLUTTER SETUP ---
+      # 1. SETUP FLUTTER SDK (FIX: Pinned to user's specific version)
       - uses: subosito/flutter-action@v2
         with:
-          # Use a version compatible with your project (e.g., '3.x.x')
-          flutter-version: '3.x.x' 
+          # IMPORTANT: Using your specific version for reliability
+          flutter-version: '3.29.3' 
+          
+      # 2. DIAGNOSTIC: Confirm Flutter is in PATH
+      - name: Verify Flutter Installation
+        run: flutter --version
+        
+      # 3. GET DEPENDENCIES (MANDATORY STEP BEFORE BUILD)
+      - name: Get Flutter Dependencies
+        run: flutter pub get
       
+      # 4. RUN BUILD SCRIPT
       - name: Build Flutter Web App
         run: flutter build web
         
+      # 5. DEPLOY TO FIREBASE
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_LIDU_C46E0 }}
           channelId: live
           projectId: lidu-c46e0
-
