@@ -24,7 +24,7 @@ const String __initial_auth_token = '';
 // --- CRITICAL ADMIN CONFIGURATION ---
 // IMPORTANT: Replace these with the actual UIDs of Lydia and Fisha from your Firebase project.
 final List<String> ADMIN_UIDS = const [
-  'LYDIA_UID_1234', // Placeholder for Lydia's actual UID
+  'jvMcF5KnmTUvzwYB4tFpTwM0kuE2', // Placeholder for Lydia's actual UID
   'UZ7b5twgf4bkBVqP3tllVQqMeUI3', // Placeholder for Fisha's actual UID
 ];
 // ------------------------------------
