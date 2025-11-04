@@ -3,6 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:guest_wish_app/Utils/brandColor.dart';
 
 // NOTE: In a real Flutter project, the 'firebase_options.dart' file is generated
 // by the 'flutterfire configure' command and contains your specific keys.
@@ -45,7 +46,7 @@ class WishApp extends StatelessWidget {
       // Using Inter and Playfair Display for an elegant look
       theme: ThemeData(
         primarySwatch: Colors.pink,
-        scaffoldBackgroundColor: const Color(0xFFFFF0F5), // Soft Pink Background
+        scaffoldBackgroundColor: backgroundColor, // Soft Pink Background
         textTheme: GoogleFonts.interTextTheme(
           Theme.of(context).textTheme,
         ),
@@ -186,7 +187,7 @@ class _WishHomePageState extends State<WishHomePage> {
           'Wishes Guestbook',
           style: GoogleFonts.playfairDisplay(
             fontWeight: FontWeight.bold,
-            color: Colors.pink.shade700,
+            color: primaryColor,
           ),
         ),
         centerTitle: true,
@@ -218,18 +219,13 @@ class _WishHomePageState extends State<WishHomePage> {
                   child: Column(
                     children: [
                       Text(
-                        'Your Best Wishes Here, Leave Your Message',
+                        'Leave Your best wishes or any messages',
                         style: TextStyle(
                           fontSize: 18,
                           color: Colors.grey.shade600,
                         ),
                         textAlign: TextAlign.center,
                       ),
-                      // const SizedBox(height: 10),
-                      // Text(
-                      //   'User ID: $_userId',
-                      //   style: TextStyle(fontSize: 10, color: Colors.grey.shade400),
-                      // ),
                     ],
                   ),
                 ),
@@ -254,12 +250,12 @@ class _WishHomePageState extends State<WishHomePage> {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [Colors.white, Colors.pink.shade50!],
+          colors: [Colors.white, backgroundColor],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.pink.shade200, width: 1),
+        border: Border.all(color: backgroundColor, width: 1),
         boxShadow: const [
           BoxShadow(
             color: Colors.black12,
@@ -273,14 +269,14 @@ class _WishHomePageState extends State<WishHomePage> {
         children: <Widget>[
           Row(
             children: [
-              Icon(Icons.favorite, color: Colors.pink.shade500, size: 24),
+              Icon(Icons.favorite, color: primaryColor, size: 24),
               const SizedBox(width: 8),
               Text(
                 'Share Your Love',
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
-                  color: Colors.pink.shade700,
+                  color: primaryColor,
                 ),
               ),
             ],
@@ -295,15 +291,15 @@ class _WishHomePageState extends State<WishHomePage> {
               fillColor: Colors.white,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.pink.shade300),
+                borderSide: BorderSide(color: borderColor),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.pink.shade300),
+                borderSide: BorderSide(color: borderColor),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.pink.shade500, width: 2),
+                borderSide: BorderSide(color: borderColor, width: 2),
               ),
             ),
           ),
@@ -318,15 +314,15 @@ class _WishHomePageState extends State<WishHomePage> {
               fillColor: Colors.white,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.pink.shade300),
+                borderSide: BorderSide(color: borderColor),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.pink.shade300),
+                borderSide: BorderSide(color: borderColor),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.pink.shade500, width: 2),
+                borderSide: BorderSide(color: borderColor, width: 2),
               ),
             ),
           ),
@@ -335,7 +331,7 @@ class _WishHomePageState extends State<WishHomePage> {
               padding: const EdgeInsets.only(top: 16.0),
               child: Text(
                 _error!,
-                style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                style: const TextStyle(color: primaryColor, fontWeight: FontWeight.bold),
               ),
             ),
           const SizedBox(height: 20),
@@ -354,7 +350,7 @@ class _WishHomePageState extends State<WishHomePage> {
               label: Text(_isLoading ? 'Sending...' : 'Submit Wish'),
               style: ElevatedButton.styleFrom(
                 foregroundColor: Colors.white,
-                backgroundColor: Colors.pink.shade500,
+                backgroundColor: primaryColor,
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(30),
@@ -381,7 +377,7 @@ class _WishHomePageState extends State<WishHomePage> {
             color: Colors.grey.shade700,
           ),
         ),
-        const Divider(color: Colors.pink),
+        const Divider(color: primaryColor),
         const SizedBox(height: 16),
 
         // StreamBuilder to listen for real-time changes
@@ -392,7 +388,7 @@ class _WishHomePageState extends State<WishHomePage> {
               return const Center(
                 child: Padding(
                   padding: EdgeInsets.all(24.0),
-                  child: CircularProgressIndicator(color: Colors.pink),
+                  child: CircularProgressIndicator(color: borderColor),
                 ),
               );
             }
@@ -474,7 +470,7 @@ class WishCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         // Pink border top for visual flair
-        border: Border(top: BorderSide(color: Colors.pink.shade300, width: 4)),
+        border: Border(top: BorderSide(color: borderColor, width: 4)),
         boxShadow: const [
           BoxShadow(
             color: Colors.black12,
@@ -504,14 +500,14 @@ class WishCard extends StatelessWidget {
             children: <Widget>[
               Row(
                 children: [
-                  Icon(Icons.favorite, size: 16, color: Colors.pink.shade600),
+                  Icon(Icons.favorite, size: 16, color: primaryColor),
                   const SizedBox(width: 4),
                   Text(
                     name,
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
-                      color: Colors.pink.shade600,
+                      color: primaryColor,
                     ),
                   ),
                 ],
