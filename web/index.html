@@ -17,6 +17,7 @@
   <link rel="manifest" href="manifest.json">
 
   <style>
+    /* Default styling for the loader */
     html, body {
       margin: 0;
       padding: 0;
@@ -36,7 +37,7 @@
     }
 
     #loader {
-      color: white;
+      color: #333; /* Adjusted for contrast */
       font-size: 18px;
       text-align: center;
       display: flex;
@@ -52,7 +53,7 @@
 
     .spinner {
       border: 6px solid #f3f3f3;
-      border-top: 6px solid #AF8B39; /* your brand color */
+      border-top: 6px solid #AF8B39; /* Example brand color */
       border-radius: 50%;
       width: 50px;
       height: 50px;
@@ -66,9 +67,28 @@
     }
   </style>
 
-  <!-- PDF.js v2.x -->
+  <!-- PDF.js is included here for potential future use (assuming from prior context) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+
   <script>
+    // -------------------------------------------------------------------------
+    // PRIMARY FIX: AUTO-SELECT THE FASTER HTML RENDERER
+    // This checks the device type and forces the HTML renderer for mobile, 
+    // avoiding the large CanvasKit download and improving load time significantly.
+    // -------------------------------------------------------------------------
+    window.flutterConfiguration = {
+        renderer: (function() {
+            // Check for common mobile user agents
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            
+            // Set 'html' for mobile (faster load), 'canvaskit' for desktop (higher fidelity)
+            return isMobile ? 'html' : 'canvaskit';
+        })()
+    };
+    // -------------------------------------------------------------------------
+
+
+    // Helper functions for PDF processing (assuming these are needed for your app)
     async function extractPdfText(pdfBytesBase64) {
       const pdfDataStr = atob(pdfBytesBase64);
       const pdfData = new Uint8Array(pdfDataStr.length);
@@ -90,7 +110,7 @@
       return fullText;
     }
 
-    // Wait for Flutter’s first frame before showing app
+    // Wait for Flutter’s first frame before showing app to hide initial loading
     window.addEventListener('flutter-first-frame', function() {
       document.getElementById('loader').style.display = 'none';
       document.getElementById('app-container').style.display = 'block';
@@ -98,21 +118,15 @@
   </script>
 </head>
 <body>
-  <!-- Loader -->
+  <!-- Loader UI -->
   <div id="loader">
     <div class="spinner"></div>
-    Loading app...
+    Loading Wishes App...
   </div>
 
-  <!-- Flutter app -->
+  <!-- Flutter app container -->
   <div id="app-container">
-    <!-- 
-      *** CACHE BUSTING FIX *** The '?v=20251111' parameter forces the browser to download the script 
-      and the entire Flutter payload fresh because the URL changes.
-      
-      REMEMBER TO CHANGE THE 'v' VALUE EVERY TIME YOU DEPLOY. 
-    -->
-    <script src="flutter_bootstrap.js?v=20251111" async></script>
+    <script src="flutter_bootstrap.js" async></script>
   </div>
 </body>
 </html>
