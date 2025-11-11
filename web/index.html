@@ -106,7 +106,13 @@
 
   <!-- Flutter app -->
   <div id="app-container">
-    <script src="flutter_bootstrap.js" async></script>
+    <!-- 
+      *** CACHE BUSTING FIX *** The '?v=20251111' parameter forces the browser to download the script 
+      and the entire Flutter payload fresh because the URL changes.
+      
+      REMEMBER TO CHANGE THE 'v' VALUE EVERY TIME YOU DEPLOY. 
+    -->
+    <script src="flutter_bootstrap.js?v=20251111" async></script>
   </div>
 </body>
 </html>

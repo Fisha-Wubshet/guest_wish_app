@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:guest_wish_app/Utils/brandColor.dart';
+import 'package:guest_wish_app/language.dart';
 import 'dart:async'; // Required for TimeoutException
 
 // NOTE: In a real Flutter project, the 'firebase_options.dart' file is generated
@@ -44,7 +45,7 @@ class AppLocalizations {
     },
     'leaveBestWishes': {
       AppLocale.en: 'Leave Your best wishes or any messages',
-      AppLocale.am: 'ምርጥ ምኞትዎን ወይም መልዕክትዎን ይተዉ', // Mirt Mignotwon Weyim Mele'ktwon Yetewu
+      AppLocale.am: 'መልካም ምኞቶን ወይም ምርቃትዎን ይተዉ', // Mirt Mignotwon Weyim Mele'ktwon Yetewu
     },
     'statusAdminView': {
       AppLocale.en: 'Status: Admin View',
@@ -203,19 +204,33 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
   
-  runApp(Center(child: ConstrainedBox(
+  //  runApp(MaterialApp(
+  //     title: AppLocalizations.of('wishesGuestbookTitle', AppLocale.en),
+  //   debugShowCheckedModeBanner: false,
+  //   home: SelectLocation(),
+  // ));
+    runApp(Center(child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 400), // phone width
                 child:  const WishApp())));
 }
 
 class WishApp extends StatelessWidget {
-  const WishApp({super.key});
+  //  final String language;
+
+ 
+  const WishApp({super.key,
+  // required  this.language
+  });
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: AppLocalizations.of('wishesGuestbookTitle', AppLocale.en), // Default title language
+       debugShowCheckedModeBanner: false,
+      title: AppLocalizations.of('wishesGuestbookTitle', 
+      // language=='English'?
+      AppLocale.en
+      // :AppLocale.am
+      ), // Default title language
       // Using Inter and Playfair Display for an elegant look
       theme: ThemeData(
         primarySwatch: Colors.pink,
@@ -224,7 +239,9 @@ class WishApp extends StatelessWidget {
           Theme.of(context).textTheme,
         ),
       ),
-      home: const WishHomePage(),
+      home:  WishHomePage(
+        // language: language
+        ),
     );
   }
 }
@@ -233,7 +250,12 @@ class WishApp extends StatelessWidget {
 // 4. HOME PAGE STATEFUL WIDGET
 // -----------------------------------------------------------------------------
 class WishHomePage extends StatefulWidget {
-  const WishHomePage({super.key});
+    // final String language;
+
+ 
+  const WishHomePage({super.key,
+  // required this.language
+  });
 
   @override
   State<WishHomePage> createState() => _WishHomePageState();
@@ -246,15 +268,15 @@ class _WishHomePageState extends State<WishHomePage> {
   final TextEditingController _messageController = TextEditingController();
   
   // --- LANGUAGE STATE ---
-  AppLocale _currentLocale = AppLocale.en; 
+  AppLocale _currentLocale = AppLocale.am; 
 
   String _userId = 'anonymous';
   bool _isLoading = true;
   String? _error; // Error message state
   bool _showLoginModal = false; // State for modal visibility
 
-  String _selectedEmoji = '❤️'; // Default emoji
-  final List<String> _emojiOptions = ['❤️', '😊', '😂', '🎉', '🥂', '💍', '🥹'];
+  String _selectedEmoji = '💖'; // Default emoji
+  final List<String> _emojiOptions = ['💖', '😊', '😂','🥹', '😲','🎉', '🥂', ];
   
   bool get _isAdmin => ADMIN_UIDS.contains(_auth.currentUser?.uid);
 
@@ -266,6 +288,12 @@ class _WishHomePageState extends State<WishHomePage> {
   @override
   void initState() {
     super.initState();
+    _currentLocale =
+    //  widget.language=='English'?
+     AppLocale.en
+    //  :AppLocale.am
+     ; 
+    
     _wishesRef = _db.collection('artifacts/${__app_id}/public/data/weddingWishes');
     _initializeAuthAndLoad();
 
@@ -355,7 +383,7 @@ class _WishHomePageState extends State<WishHomePage> {
 
     if (name.isEmpty || message.isEmpty) {
       setState(() {
-        _error = getLocalized('enterBothFieldsError');
+        _error = "እባክዎ ስምዎን እና መልእክትዎን ያስገቡ።\nPlease enter both your name and a message.";
       });
       return;
     }
@@ -495,11 +523,13 @@ class _WishHomePageState extends State<WishHomePage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          getLocalized('wishesGuestbookTitle'),
+          'የምኞት መዝገብ\nWishes Guestbook',
           style: GoogleFonts.playfairDisplay(
             fontWeight: FontWeight.bold,
             color: primaryColor,
+            fontSize: 20
           ),
+          textAlign: TextAlign.center,
         ),
         centerTitle: true,
         backgroundColor: Colors.white,
@@ -541,6 +571,7 @@ class _WishHomePageState extends State<WishHomePage> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: <Widget>[
                     // Header Details & Language Selector
+                     if(!_isAdmin )
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
@@ -556,12 +587,12 @@ class _WishHomePageState extends State<WishHomePage> {
                       ),
                       child: Column(
                         children: [
-                          _buildLanguageSelector(), // NEW LANGUAGE SWITCHER
+                          // _buildLanguageSelector(), // NEW LANGUAGE SWITCHER
                           const SizedBox(height: 12),
                           Text(
-                            getLocalized('leaveBestWishes'),
+                            'መልካም ምኞቶን ወይም ምርቃትዎን ይተዉ\nLeave Your best wishes or any messages',
                             style: TextStyle(
-                              fontSize: 18,
+                              fontSize: 14,
                               color: Colors.grey.shade600,
                             ),
                             textAlign: TextAlign.center,
@@ -586,11 +617,18 @@ class _WishHomePageState extends State<WishHomePage> {
                     const SizedBox(height: 24),
 
                     // Wish Submission Form
+                    if(!_isAdmin )
                     _buildWishForm(),
+                     if(!_isAdmin )
                     const SizedBox(height: 32),
 
                     // Wishes Display Area (Conditional)
                     if(_isAdmin)
+                     Text(
+                                 getLocalized('statusAdminView') ,
+                                  style: TextStyle(fontSize: 12, color: _isAdmin ? Colors.green.shade700 : Colors.grey.shade600, fontWeight: FontWeight.bold),
+                                ),
+                                if(_isAdmin)
                     _buildWishList(),
                   ],
                 ),
@@ -638,9 +676,9 @@ class _WishHomePageState extends State<WishHomePage> {
               Icon(Icons.favorite, color: primaryColor, size: 24),
               const SizedBox(width: 8),
               Text(
-                getLocalized('shareYourLove'),
+                'ፍቅርዎን ያካፍሉ. Share Your Love',
                 style: TextStyle(
-                  fontSize: 22,
+                  fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: primaryColor,
                 ),
@@ -652,7 +690,11 @@ class _WishHomePageState extends State<WishHomePage> {
           TextField(
             controller: _nameController,
             decoration: InputDecoration(
-              hintText: getLocalized('yourNameHint'),
+              hintText: 'ስምዎ/ Your Name (e.g., Aunt Samri)',
+              hintStyle: TextStyle(
+                  fontSize: 12,
+                  color: Colors.black87
+                ),
               filled: true,
               fillColor: Colors.white,
               border: OutlineInputBorder(
@@ -676,7 +718,11 @@ class _WishHomePageState extends State<WishHomePage> {
             controller: _messageController,
             maxLines: 4,
             decoration: InputDecoration(
-              hintText: getLocalized('writeYourWishHint'),
+              hintText: 'ከልብ የመነጨ ምኞትዎን ወይም ምክርዎን ይጻፉ...\nWrite your heartfelt wish or advice here...',
+              hintStyle: TextStyle(
+                  fontSize: 12,
+                  color: Colors.black87
+                ),
               filled: true,
               fillColor: Colors.white,
               border: OutlineInputBorder(
@@ -695,8 +741,8 @@ class _WishHomePageState extends State<WishHomePage> {
           ),
           const SizedBox(height: 16),
             Text(
-            getLocalized('chooseReaction'),
-            style: TextStyle(fontWeight: FontWeight.w600, color: Colors.grey.shade700),
+           'ስሜት ይምረጡ:\nChoose a reaction:',
+            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey.shade700, fontSize: 15),
           ),
           const SizedBox(height: 8),
           Row(
@@ -745,8 +791,9 @@ class _WishHomePageState extends State<WishHomePage> {
                       height: 18,
                       child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                     )
-                  : const Icon(Icons.send),
-              label: Text(_isLoading ? getLocalized('sending') : getLocalized('submitWish')),
+                  : null,
+              label: Text(_isLoading ? getLocalized('sending') : 'ምኞት ያስገቡ\nSubmit Wish',
+              style: const TextStyle(fontSize: 12)),
               style: ElevatedButton.styleFrom(
                 foregroundColor: Colors.white,
                 backgroundColor: primaryColor,
@@ -883,7 +930,7 @@ class _WishHomePageState extends State<WishHomePage> {
           ),
           backgroundColor: backgroundColor,
           title: Text(
-            getLocalized('wishSentTitle'),
+           'ምኞት ተልኳል!\nWish Sent!',
             textAlign: TextAlign.center,
             style: const TextStyle(
               color: primaryColor, 
@@ -901,7 +948,7 @@ class _WishHomePageState extends State<WishHomePage> {
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 16.0),
                 child: Text(
-                  getLocalized('wishSentMessage'),
+                 'ተጠናቋል! ምኞትዎ በተሳካ ሁኔታ ወደ ማስታወሻችን ታክሏል።\nDone! Your wish has been successfully added to our memories.',
                   textAlign: TextAlign.center,
                   style: const TextStyle(color: Colors.black87),
                 ),
@@ -911,7 +958,7 @@ class _WishHomePageState extends State<WishHomePage> {
           actions: <Widget>[
             TextButton(
               child: Text(
-                getLocalized('close'),
+               'ዝጋ / close',
                 style: const TextStyle(
                   color: primaryColor,
                   fontWeight: FontWeight.bold,
