@@ -5,6 +5,7 @@ import '../../core/branch/branch_provider.dart';
 import '../../core/models/branch.dart';
 import '../../core/locale/locale_provider.dart';
 import '../../core/locale/app_strings.dart';
+import '../../shared/widgets/shimmer_widgets.dart';
 
 class BranchesScreen extends ConsumerStatefulWidget {
   const BranchesScreen({super.key});
@@ -84,7 +85,7 @@ class _BranchesScreenState extends ConsumerState<BranchesScreen> {
 
   Widget _buildBody() {
     if (_loading) {
-      return const Center(child: CircularProgressIndicator(color: Color(0xFF7C3AED)));
+      return ShimmerList(cardBuilder: () => const ShimmerBranchCard(), count: 3);
     }
 
     if (_error != null) {

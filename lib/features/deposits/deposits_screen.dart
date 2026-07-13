@@ -8,6 +8,7 @@ import '../../core/models/branch.dart';
 import '../../shared/widgets/app_error.dart';
 import '../../core/locale/app_strings.dart';
 import '../../core/locale/locale_provider.dart';
+import '../../shared/widgets/shimmer_widgets.dart';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -320,8 +321,14 @@ class _DepositsScreenState extends ConsumerState<DepositsScreen> {
               ),
             ),
             if (_isLoading)
-              const SliverFillRemaining(
-                child: Center(child: CircularProgressIndicator(color: Color(0xFF7C3AED))),
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (_, __) => const ShimmerDepositCard(),
+                    childCount: 6,
+                  ),
+                ),
               )
             else if (_error != null)
               SliverFillRemaining(

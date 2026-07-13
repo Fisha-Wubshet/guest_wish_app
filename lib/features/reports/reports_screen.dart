@@ -6,6 +6,7 @@ import '../../core/branch/branch_provider.dart';
 import '../../core/locale/app_strings.dart';
 import '../../core/locale/locale_provider.dart';
 import '../../core/utils/formatters.dart';
+import '../../shared/widgets/shimmer_widgets.dart';
 
 // ─── Top-level error extractor ────────────────────────────────────────────────
 
@@ -483,7 +484,7 @@ class _OverviewTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (loading) {
-      return const Center(child: CircularProgressIndicator());
+      return const ShimmerReportSection();
     }
     if (error != null) {
       return _ErrorRetry(message: error!, onRetry: onRefresh);
@@ -774,10 +775,7 @@ class _RevenueTab extends StatelessWidget {
           ],
           const SizedBox(height: 20),
           if (loading)
-            const Center(
-                child: Padding(
-                    padding: EdgeInsets.all(40),
-                    child: CircularProgressIndicator()))
+            const ShimmerReportRows()
           else if (error != null)
             _ErrorRetry(message: error!, onRetry: onLoad)
           else if (data == null)
@@ -937,7 +935,7 @@ class _ReceivablesTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (loading) {
-      return const Center(child: CircularProgressIndicator());
+      return const ShimmerReportSection();
     }
     if (error != null) {
       return _ErrorRetry(message: error!, onRetry: onRefresh);
@@ -1335,7 +1333,7 @@ class _ItemsTab extends StatelessWidget {
 
   Widget _buildRevenueView() {
     if (revenueLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const ShimmerReportSection();
     }
     if (revenueError != null) {
       return _ErrorRetry(message: revenueError!, onRetry: onRevenueRefresh);
@@ -1546,7 +1544,7 @@ class _ItemsTab extends StatelessWidget {
 
   Widget _buildUtilList() {
     if (utilLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const ShimmerReportSection();
     }
     if (utilError != null) {
       return _ErrorRetry(message: utilError!, onRetry: onUtilLoad);
@@ -1750,7 +1748,7 @@ class _BranchesTab extends StatelessWidget {
         ),
         Expanded(
           child: loading
-              ? const Center(child: CircularProgressIndicator())
+              ? const ShimmerReportSection()
               : error != null
                   ? _ErrorRetry(message: error!, onRetry: onLoad)
                   : data == null

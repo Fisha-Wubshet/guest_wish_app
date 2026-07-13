@@ -181,6 +181,7 @@ class AppStrings {
       staffFallback: 'Staff',
       collectedLog: 'collected', refundedLog: 'refunded',
       enterDamageAmountMsg: 'Enter damage amount',
+      unitLabel: 'Unit',
     ),
     newBooking: NewBookingStrings(
       title: 'New Booking',
@@ -596,6 +597,7 @@ class AppStrings {
       staffFallback: 'ሰራተኛ',
       collectedLog: 'ተሰብስቧል', refundedLog: 'ተመልሷል',
       enterDamageAmountMsg: 'የጉዳት መጠን ያስገቡ',
+      unitLabel: 'ቁጥር',
     ),
     newBooking: NewBookingStrings(
       title: 'አዲስ ማስያዝ',
@@ -1001,6 +1003,7 @@ class BookingDetailStrings {
   final String bookingModifiedMsg, bookingUpdatedMsg, pickedUpMsg, returnedMsg, cancelledMsg;
   final String enterValidAmountMsg, collectButton, staffFallback;
   final String collectedLog, refundedLog, enterDamageAmountMsg;
+  final String unitLabel;
   const BookingDetailStrings({
     required this.financialSummary, required this.totalAgreed, required this.totalPaid,
     required this.balanceDue, required this.securityDeposit, required this.held,
@@ -1040,6 +1043,7 @@ class BookingDetailStrings {
     required this.returnedMsg, required this.cancelledMsg,
     required this.enterValidAmountMsg, required this.collectButton, required this.staffFallback,
     required this.collectedLog, required this.refundedLog, required this.enterDamageAmountMsg,
+    required this.unitLabel,
   });
 }
 

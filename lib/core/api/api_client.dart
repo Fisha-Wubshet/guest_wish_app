@@ -31,7 +31,7 @@ class ApiClient {
   Future<void> init() async {
     if (_initialized) return;
     final prefs = await SharedPreferences.getInstance();
-    final rawUrl = prefs.getString('server_url') ?? 'http://10.0.2.2:8001';
+    final rawUrl = prefs.getString('server_url') ?? 'https://rent.gizebit.com';
     final baseUrl = _normalize(rawUrl);
 
     _serverRootUrl = baseUrl;

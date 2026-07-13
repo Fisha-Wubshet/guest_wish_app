@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../core/api/api_client.dart';
+import '../../core/auth/auth_state.dart';
 import '../../core/locale/locale_provider.dart';
 import '../../core/locale/app_strings.dart';
 import '../../core/models/booking.dart';
@@ -12,6 +13,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatters.dart';
 import 'package:go_router/go_router.dart';
 import 'bookings_provider.dart';
+import '../../shared/widgets/shimmer_widgets.dart';
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
@@ -33,6 +35,19 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
 
   int? _returningItemId;
   final Map<String, bool> _expandedGroups = {};
+
+  /// STAFF/BRANCH_MANAGER can only act on bookings from their own branch.
+  /// SHOP_ADMIN can act on any branch. If the booking isn't loaded yet, treat
+  /// as foreign so no action buttons flash before we know.
+  bool get _isForeignBranch {
+    final user = ref.read(authProvider).user;
+    if (user == null) return true;
+    if (!user.isStaff && !user.isBranchManager) return false;
+    if (_booking == null) return true;
+    return _booking!.branchId != user.branchId;
+  }
+
+  bool get _canWrite => !_isForeignBranch;
 
   @override
   void initState() {
@@ -196,7 +211,7 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
     if (_loading) {
       return Scaffold(
         appBar: AppBar(leading: const BackButton()),
-        body: const Center(child: CircularProgressIndicator()),
+        body: const ShimmerBookingDetail(),
       );
     }
     if (_error != null || _booking == null) {
@@ -233,6 +248,8 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
             sliver: SliverList(
               delegate: SliverChildListDelegate([
                 const SizedBox(height: 16),
+                if (_isForeignBranch) _buildReadOnlyBanner(b),
+                if (_isForeignBranch) const SizedBox(height: 12),
                 _buildFinancials(b),
                 const SizedBox(height: 12),
                 _buildRentalPeriod(b),
@@ -738,7 +755,7 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
                             _ItemChip(S.bookingDetail.returned,
                                 color: const Color(0xFF10B981),
                                 bg: const Color(0xFFF0FDF4))
-                          else if (isPickedUp)
+                          else if (isPickedUp && _canWrite)
                             _ReturnButton(
                               loading: _returningItemId == units.first.id,
                               onPressed: () =>
@@ -764,7 +781,7 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
                               size: 14, color: Color(0xFFCBD5E1)),
                           const SizedBox(width: 8),
                           Text(
-                            'Unit ${idx + 1}',
+                            '${S.bookingDetail.unitLabel} ${idx + 1}',
                             style: const TextStyle(
                                 fontSize: 12,
                                 color: Color(0xFF64748B),
@@ -775,7 +792,7 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
                             _ItemChip(S.bookingDetail.returned,
                                 color: const Color(0xFF10B981),
                                 bg: const Color(0xFFF0FDF4))
-                          else if (isPickedUp)
+                          else if (isPickedUp && _canWrite)
                             _ReturnButton(
                               loading: isReturning,
                               onPressed: () => _markItemReturned(unit.id),
@@ -853,12 +870,44 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
     );
   }
 
+  // ─── Read-only banner (foreign branch) ────────────────────────────────────
+
+  Widget _buildReadOnlyBanner(Booking b) {
+    final locale = ref.read(localeProvider);
+    final branch = b.branchName ?? '';
+    final msg = locale == 'am'
+        ? 'ይህ ማስያዝ የ$branch ነው። ማየት ብቻ ይችላሉ፣ ማስተካከል አይችሉም።'
+        : 'This booking belongs to $branch. You can view but not edit bookings from other branches.';
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEFF6FF),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFBFDBFE)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.account_tree_outlined, color: Color(0xFF2563EB), size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              msg,
+              style: const TextStyle(fontSize: 13, color: Color(0xFF1E3A8A), height: 1.4),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   // ─── Bottom bar ────────────────────────────────────────────────────────────
 
   Widget? _buildBottomBar(Booking b) {
     final pad = MediaQuery.of(context).padding.bottom;
 
-    if (b.isCompleted || b.isCancelled) {
+    // Foreign-branch users see PDF only, regardless of status.
+    if (b.isCompleted || b.isCancelled || !_canWrite) {
       return Container(
         padding: EdgeInsets.fromLTRB(16, 12, 16, pad + 12),
         decoration: const BoxDecoration(

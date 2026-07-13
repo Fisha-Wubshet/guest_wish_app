@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'customers_provider.dart';
 import '../../core/api/api_client.dart';
+import '../../core/auth/auth_state.dart';
 import '../../core/locale/locale_provider.dart';
 import '../../core/locale/app_strings.dart';
 import '../../core/models/booking.dart';
@@ -722,16 +723,24 @@ class _PageBtn extends StatelessWidget {
       );
 }
 
-class _BookingTile extends StatelessWidget {
+class _BookingTile extends ConsumerWidget {
   final Booking booking;
   const _BookingTile({required this.booking});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final statusColor = StatusColors.forStatus(booking.status);
     final statusBg    = StatusColors.backgroundForStatus(booking.status);
     final isCancelled = booking.isCancelled;
     final hasBalance  = booking.remainingBalance > 0 && !isCancelled;
+
+    final user = ref.watch(authProvider).user;
+    final isForeign = user != null
+        && (user.isStaff || user.isBranchManager)
+        && booking.branchId != null
+        && booking.branchId != user.branchId;
+    final branchChipColor = isForeign ? const Color(0xFF64748B) : const Color(0xFF7C3AED);
+    final branchChipBg    = isForeign ? const Color(0xFFF1F5F9) : const Color(0xFFF3E8FF);
 
     return GestureDetector(
       onTap: () => context.push('/bookings/${booking.id}'),
@@ -764,13 +773,31 @@ class _BookingTile extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 6),
             Row(children: [
+              if (booking.branchName != null) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(color: branchChipBg, borderRadius: BorderRadius.circular(5)),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    Icon(Icons.account_tree_outlined, size: 10, color: branchChipColor),
+                    const SizedBox(width: 3),
+                    Text(
+                      booking.branchName!,
+                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: branchChipColor),
+                    ),
+                  ]),
+                ),
+                const SizedBox(width: 8),
+              ],
               const Icon(Icons.date_range_outlined, size: 11, color: Color(0xFF94A3B8)),
               const SizedBox(width: 4),
-              Text(
-                '${formatDate(booking.startDate)} → ${formatDate(booking.endDate)}',
-                style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+              Expanded(
+                child: Text(
+                  '${formatDate(booking.startDate)} → ${formatDate(booking.endDate)}',
+                  style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ]),
             const SizedBox(height: 8),

@@ -6,6 +6,7 @@ import '../../core/auth/auth_state.dart';
 import '../../core/locale/app_strings.dart';
 import '../../core/locale/locale_provider.dart';
 import '../../core/models/managed_item.dart';
+import '../../shared/widgets/shimmer_widgets.dart';
 
 class StaffScreen extends ConsumerStatefulWidget {
   const StaffScreen({super.key});
@@ -124,7 +125,7 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
 
   Widget _buildBody(AppUser? currentUser) {
     if (_loading) {
-      return const Center(child: CircularProgressIndicator(color: Color(0xFF7C3AED)));
+      return ShimmerList(cardBuilder: () => const ShimmerStaffTile());
     }
 
     if (_error != null) {

@@ -7,6 +7,7 @@ import '../../core/locale/app_strings.dart';
 import '../../core/locale/locale_provider.dart';
 import '../../core/models/managed_item.dart';
 import '../../core/utils/formatters.dart';
+import '../../shared/widgets/shimmer_widgets.dart';
 
 class ItemsScreen extends ConsumerStatefulWidget {
   const ItemsScreen({super.key});
@@ -206,7 +207,15 @@ class _ItemsScreenState extends ConsumerState<ItemsScreen> {
               ),
             ),
             if (_loading)
-              const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (_, __) => const ShimmerItemTile(),
+                    childCount: 7,
+                  ),
+                ),
+              )
             else if (_error != null)
               SliverFillRemaining(
                 child: Center(
