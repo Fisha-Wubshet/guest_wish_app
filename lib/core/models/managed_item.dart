@@ -62,6 +62,7 @@ class StaffUser {
   final String firstName;
   final String lastName;
   final String email;
+  final String? phoneNumber;
   final List<String> roles;
   final String? branchName;
   final int? branchId;
@@ -72,6 +73,7 @@ class StaffUser {
     required this.firstName,
     required this.lastName,
     required this.email,
+    this.phoneNumber,
     required this.roles,
     this.branchName,
     this.branchId,
@@ -110,6 +112,7 @@ class StaffUser {
       firstName: (j['firstName'] ?? j['first_name'] ?? '') as String,
       lastName: (j['lastName'] ?? j['last_name'] ?? '') as String,
       email: (j['email'] ?? '') as String,
+      phoneNumber: (j['phoneNumber'] ?? j['phone_number']) as String?,
       roles: roles,
       branchName: branch?['name'] as String?,
       branchId: branchId,

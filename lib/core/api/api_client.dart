@@ -19,6 +19,20 @@ class ApiClient {
   bool _isRefreshing = false;
   final List<Completer<void>> _refreshWaiters = [];
   Future<void> Function()? _onSessionExpired;
+  void Function(bool online)? _onNetworkStatusChange;
+
+  void setOnNetworkStatusChange(void Function(bool online) cb) => _onNetworkStatusChange = cb;
+
+  bool _isNetworkError(DioException err) {
+    // Real "no internet" symptoms: DNS/connection issues + total absence of any
+    // HTTP response. A 4xx/5xx from the server means we ARE online.
+    if (err.response != null) return false;
+    return err.type == DioExceptionType.connectionError ||
+        err.type == DioExceptionType.connectionTimeout ||
+        err.type == DioExceptionType.receiveTimeout ||
+        err.type == DioExceptionType.sendTimeout ||
+        err.error is SocketException;
+  }
 
   String _normalize(String url) {
     String u = url;
@@ -56,7 +70,18 @@ class ApiClient {
     ));
 
     _dio.interceptors.add(InterceptorsWrapper(
+      onResponse: (response, handler) {
+        // Any successful HTTP round-trip means we're online.
+        _onNetworkStatusChange?.call(true);
+        handler.next(response);
+      },
       onError: (DioException err, ErrorInterceptorHandler handler) async {
+        if (_isNetworkError(err)) {
+          _onNetworkStatusChange?.call(false);
+        } else {
+          // Got a response (even a 4xx/5xx) — we're online.
+          _onNetworkStatusChange?.call(true);
+        }
         if (err.response?.statusCode == 401 && _refreshToken != null) {
           await _handleTokenRefresh(err, handler);
         } else {

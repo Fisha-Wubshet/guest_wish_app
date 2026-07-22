@@ -6,7 +6,10 @@ import '../../core/auth/auth_state.dart';
 import '../../core/locale/app_strings.dart';
 import '../../core/locale/locale_provider.dart';
 import '../../core/models/managed_item.dart';
+import '../../shared/widgets/phone_input_field.dart';
 import '../../shared/widgets/shimmer_widgets.dart';
+import '../../shared/widgets/credentials_share_sheet.dart';
+import '../../core/utils/password_gen.dart';
 
 class StaffScreen extends ConsumerStatefulWidget {
   const StaffScreen({super.key});
@@ -261,15 +264,23 @@ class _StaffTile extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 2),
-                  Text(member.email, style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)), overflow: TextOverflow.ellipsis),
+                  Row(
+                    children: [
+                      const Icon(Icons.store_outlined, size: 13, color: Color(0xFF94A3B8)),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          member.branchName ?? '—',
+                          style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8), letterSpacing: 0.2),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 6),
                   Row(
                     children: [
                       _Chip(label: _roleLabel, color: _roleColor),
-                      if (member.branchName != null) ...[
-                        const SizedBox(width: 6),
-                        _Chip(label: member.branchName!, color: const Color(0xFF64748B), icon: Icons.store_outlined),
-                      ],
                       const Spacer(),
                       _StatusBadge(active: isActive),
                     ],
@@ -394,6 +405,9 @@ class _CreateStaffSheetState extends State<_CreateStaffSheet> {
   bool _saving = false;
   bool _loadingBranches = false;
   String? _error;
+  String _phoneNormalized = '';
+  String _countryDial = '+251';
+  String _emailLanguage = appLocale == 'am' ? 'am' : 'en';
 
   @override
   void initState() {
@@ -430,27 +444,84 @@ class _CreateStaffSheetState extends State<_CreateStaffSheet> {
 
   Future<void> _save() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
+    if (_phoneNormalized.isEmpty) {
+      setState(() { _error = 'Please enter the phone number.'; });
+      return;
+    }
     if (_branchId == null) {
       setState(() { _error = S.settings.pleaseSelectBranch; });
       return;
     }
-    final nav = Navigator.of(context);
     setState(() { _saving = true; _error = null; });
     try {
-      await widget.api.postRoot(
-        '/register-admin?branchId=$_branchId',
-        data: {
-          'firstName': _firstCtrl.text.trim(),
-          'lastName': _lastCtrl.text.trim(),
-          'email': _emailCtrl.text.trim(),
-          'password': _passCtrl.text,
-          'roles': [_role],
-        },
+      final payload = <String, dynamic>{
+        'firstName': _firstCtrl.text.trim(),
+        'lastName':  _lastCtrl.text.trim(),
+        'phone':     _phoneNormalized,
+        'countryCode': _countryDial,
+        'password':  _passCtrl.text,
+        'roles':     [_role],
+        'branchId':  _branchId,
+      };
+      final email = _emailCtrl.text.trim();
+      if (email.isNotEmpty) {
+        payload['email'] = email;
+        payload['emailLanguage'] = _emailLanguage;
+      }
+
+      final res = await widget.api.postRoot('/register-admin', data: payload);
+      final data = res.data as Map<String, dynamic>;
+      if (!mounted) return;
+
+      // Pop the create-staff sheet then open the credentials share sheet via
+      // the root navigator so the parent screen stays intact underneath.
+      final rootCtx = Navigator.of(context, rootNavigator: true).context;
+      Navigator.of(context).pop(true);
+
+      await CredentialsShareSheet.show(
+        rootCtx,
+        firstName: _firstCtrl.text.trim(),
+        lastName:  _lastCtrl.text.trim(),
+        phone:     _phoneNormalized,
+        password:  (data['plainPassword'] as String?) ?? _passCtrl.text,
+        recoveryCode: data['recoveryCode'] as String?,
+        userEmail: email.isEmpty ? null : email,
+        emailSent: data['emailSent'] as bool? ?? false,
       );
-      nav.pop(true);
     } catch (e) {
-      setState(() { _error = _staffErr(e); _saving = false; });
+      if (mounted) setState(() { _error = _staffErr(e); _saving = false; });
     }
+  }
+
+  void _genPassword() {
+    setState(() {
+      _passCtrl.text = generatePassword();
+      _showPass = true;
+    });
+  }
+
+  Widget _langChip(String value, String label) {
+    final active = _emailLanguage == value;
+    return GestureDetector(
+      onTap: () => setState(() => _emailLanguage = value),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 120),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: active ? const Color(0xFFEDE9FE) : const Color(0xFFF1F5F9),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: active ? const Color(0xFF7C3AED) : Colors.transparent, width: 1.2),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            color: active ? const Color(0xFF7C3AED) : const Color(0xFF64748B),
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -513,12 +584,36 @@ class _CreateStaffSheetState extends State<_CreateStaffSheet> {
                     ],
                   ),
                   const SizedBox(height: 12),
+                  PhoneInputField(
+                    initialCountryDial: _countryDial,
+                    onChanged: (digits, dial, normalized) {
+                      _phoneNormalized = normalized ?? '';
+                      _countryDial = dial;
+                    },
+                    validator: (norm) => (norm == null || norm.isEmpty) ? S.settings.staffRequired : null,
+                  ),
+                  const SizedBox(height: 12),
                   TextFormField(
                     controller: _emailCtrl,
                     keyboardType: TextInputType.emailAddress,
-                    decoration: _staffInputDec(S.auth.email, Icons.email_outlined),
-                    validator: (v) => (v == null || !v.contains('@')) ? S.settings.validEmailRequired : null,
+                    onChanged: (_) => setState(() {}),
+                    decoration: _staffInputDec('${S.auth.email} (optional)', Icons.email_outlined),
                   ),
+                  if (_emailCtrl.text.trim().isNotEmpty) ...[
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Text(
+                          appLocale == 'am' ? 'የእንኳን ደህና መጡ ኢሜይል ቋንቋ' : 'Welcome email language',
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
+                        ),
+                        const SizedBox(width: 10),
+                        _langChip('en', '🇬🇧 EN'),
+                        const SizedBox(width: 6),
+                        _langChip('am', '🇪🇹 አማ'),
+                      ],
+                    ),
+                  ],
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: _passCtrl,
@@ -530,6 +625,22 @@ class _CreateStaffSheetState extends State<_CreateStaffSheet> {
                       ),
                     ),
                     validator: (v) => (v == null || v.length < 6) ? S.settings.minSixChars : null,
+                  ),
+                  const SizedBox(height: 6),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                      onPressed: _genPassword,
+                      style: TextButton.styleFrom(
+                        backgroundColor: const Color(0xFFF3F0FF),
+                        foregroundColor: const Color(0xFF7C3AED),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                      ),
+                      icon: const Icon(Icons.auto_fix_high, size: 14),
+                      label: Text(appLocale == 'am' ? 'ጠንካራ ፓስዎርድ ፍጠር' : 'Generate strong password'),
+                    ),
                   ),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String>(

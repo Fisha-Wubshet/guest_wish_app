@@ -24,8 +24,22 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.14.1
 
 flutter:
   uses-material-design: true
   assets:
     - assets/logo.png
+    - assets/gizebit_logo.png
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/icon/app_icon.png"
+  min_sdk_android: 21
+  remove_alpha_ios: true
+  # NO adaptive-icon config on purpose: adaptive icons let the launcher apply
+  # its own mask (circle/squircle) which would crop the logo. Legacy icons
+  # keep the artwork as-is.
+  web:
+    generate: false

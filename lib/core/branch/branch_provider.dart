@@ -82,6 +82,15 @@ class BranchNotifier extends StateNotifier<BranchState> {
     await prefs.remove('active_branch_name');
     state = state.copyWith(clearActiveBranch: true);
   }
+
+  /// Fully reset branch state — used on logout AND right before a new login,
+  /// so a fresh user never inherits the previous user's branches / active branch.
+  Future<void> reset() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('active_branch_id');
+    await prefs.remove('active_branch_name');
+    state = const BranchState(isRestored: true);   // isRestored=true so the router guard doesn't stall
+  }
 }
 
 final branchProvider = StateNotifierProvider<BranchNotifier, BranchState>((ref) {

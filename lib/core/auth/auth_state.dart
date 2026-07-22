@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../api/api_client.dart';
+import '../branch/branch_provider.dart';
 
 // ─── User model ──────────────────────────────────────────────────────────────
 
@@ -9,47 +10,63 @@ class AppUser {
   final int id;
   final String name;
   final String email;
+  final String? phoneNumber;
+  final String? countryCode;
   final List<String> roles;
   final String itemLabel;
   final int? shopId;
   final int? branchId;
   final String? branchName;
   final String? shopName;
+  final bool hasRecoveryCode;
+  final bool mustChangePassword;
 
   const AppUser({
     required this.id,
     required this.name,
     required this.email,
+    this.phoneNumber,
+    this.countryCode,
     required this.roles,
     required this.itemLabel,
     this.shopId,
     this.branchId,
     this.branchName,
     this.shopName,
+    this.hasRecoveryCode = false,
+    this.mustChangePassword = false,
   });
 
   factory AppUser.fromJson(Map<String, dynamic> j) => AppUser(
         id: j['id'] as int,
         name: j['name'] ?? '',
         email: j['email'] ?? '',
+        phoneNumber: j['phoneNumber'] as String?,
+        countryCode: j['countryCode'] as String?,
         roles: (j['roles'] as List<dynamic>? ?? []).cast<String>(),
         itemLabel: j['itemLabel'] ?? 'Item',
         shopId: j['shopId'] as int?,
         branchId: j['branchId'] as int?,
         branchName: j['branchName'],
         shopName: j['shopName'],
+        hasRecoveryCode: j['hasRecoveryCode'] as bool? ?? false,
+        mustChangePassword: j['mustChangePassword'] as bool? ?? false,
       );
 
   Map<String, dynamic> toJson() => {
         'id': id,
         'name': name,
         'email': email,
+        'phoneNumber': phoneNumber,
+        'countryCode': countryCode,
         'roles': roles,
         'itemLabel': itemLabel,
         'shopId': shopId,
         'branchId': branchId,
         'branchName': branchName,
         'shopName': shopName,
+        'hasRecoveryCode': hasRecoveryCode,
+        'mustChangePassword': mustChangePassword,
       };
 
   bool get isSuperAdmin => roles.contains('ROLE_SUPER_ADMIN');
@@ -97,8 +114,9 @@ class AuthState {
 
 class AuthNotifier extends StateNotifier<AuthState> {
   final ApiClient _api;
+  final Ref _ref;
 
-  AuthNotifier(this._api) : super(const AuthState(isLoading: true)) {
+  AuthNotifier(this._api, this._ref) : super(const AuthState(isLoading: true)) {
     _api.setOnSessionExpired(logout);
     _restoreSession();
   }
@@ -122,28 +140,39 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  Future<bool> login(String email, String password) async {
+  /// Legacy email login (kept for the transition period).
+  Future<bool> login(String email, String password) =>
+      _doLogin({'email': email, 'password': password});
+
+  /// New phone-based login.
+  Future<bool> loginByPhone(String phone, String countryCode, String password) =>
+      _doLogin({'phone': phone, 'countryCode': countryCode, 'password': password});
+
+  Future<bool> _doLogin(Map<String, dynamic> payload) async {
     state = state.copyWith(isLoading: true, clearError: true);
+    // Belt-and-suspenders: wipe any lingering branch state from a previous
+    // session so user B never inherits user A's branches.
+    await _ref.read(branchProvider.notifier).reset();
     try {
-      final res = await _api.postRoot('/login', data: {
-        'email': email,
-        'password': password,
-      });
+      final res = await _api.postRoot('/login', data: payload);
       final data = res.data as Map<String, dynamic>;
       final token = data['token'] as String;
-      // Laravel returns a flat response — no nested 'user' key
       final firstName = (data['firstName'] as String?) ?? '';
       final lastName = (data['lastName'] as String?) ?? '';
       final user = AppUser(
         id: data['userId'] as int,
         name: '$firstName $lastName'.trim(),
-        email: (data['email'] as String?) ?? email,
+        email: (data['email'] as String?) ?? '',
+        phoneNumber: data['phoneNumber'] as String?,
+        countryCode: data['countryCode'] as String? ?? '+251',
         roles: (data['roles'] as List<dynamic>? ?? []).cast<String>(),
         itemLabel: (data['itemLabel'] as String?) ?? 'Dress',
         shopId: data['shopId'] as int?,
         branchId: data['branchId'] as int?,
         branchName: data['branchName'] as String?,
         shopName: null,
+        hasRecoveryCode: data['hasRecoveryCode'] as bool? ?? false,
+        mustChangePassword: data['mustChangePassword'] as bool? ?? false,
       );
 
       final refreshToken = data['refreshToken'] as String?;
@@ -190,21 +219,41 @@ class AuthNotifier extends StateNotifier<AuthState> {
     } catch (_) {}
   }
 
+  /// Clears the `mustChangePassword` flag after the user completes the
+  /// first-login password change.
+  Future<void> clearMustChangePassword() async {
+    final u = state.user;
+    if (u == null) return;
+    final updated = AppUser(
+      id: u.id, name: u.name, email: u.email,
+      phoneNumber: u.phoneNumber, countryCode: u.countryCode,
+      roles: u.roles, itemLabel: u.itemLabel,
+      shopId: u.shopId, branchId: u.branchId,
+      branchName: u.branchName, shopName: u.shopName,
+      hasRecoveryCode: u.hasRecoveryCode,
+      mustChangePassword: false,
+    );
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('user', jsonEncode(updated.toJson()));
+    state = state.copyWith(user: updated);
+  }
+
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('token');
     await prefs.remove('refresh_token');
     await prefs.remove('user');
-    await prefs.remove('active_branch_id');
-    await prefs.remove('active_branch_name');
     _api.clearToken();
+    // Wipe branch state (both in-memory + persisted keys) so the next user
+    // starts with a clean slate.
+    await _ref.read(branchProvider.notifier).reset();
     state = const AuthState();
   }
 
   String _extractError(dynamic e) {
     final msg = e.toString();
     if (msg.contains('401') || msg.contains('credentials') || msg.contains('Unauthorized')) {
-      return 'Invalid email or password';
+      return 'Invalid phone number or password';
     }
     if (msg.contains('SocketException') ||
         msg.contains('Connection refused') ||
@@ -226,5 +275,5 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
   final api = ref.read(apiClientProvider);
-  return AuthNotifier(api);
+  return AuthNotifier(api, ref);
 });

@@ -6,6 +6,8 @@ import '../models/booking.dart';
 import '../branch/branch_provider.dart';
 import '../../features/auth/login_screen.dart';
 import '../../features/auth/branch_select_screen.dart';
+import '../../features/auth/forgot_password_screen.dart';
+import '../../features/auth/change_password_screen.dart';
 import '../../features/bookings/bookings_screen.dart';
 import '../../features/bookings/booking_detail_screen.dart';
 import '../../features/bookings/modify_booking_screen.dart';
@@ -36,7 +38,16 @@ final routerProvider = Provider<GoRouter>((ref) {
       final loggedIn = authState.isAuthenticated;
       final location = state.matchedLocation;
 
-      if (!loggedIn && location != '/login') return '/login';
+      if (!loggedIn && location != '/login' && location != '/forgot-password') return '/login';
+
+      // First-login: force the user to change their temporary password before
+      // any other screen is accessible.
+      if (loggedIn && authState.user!.mustChangePassword && location != '/change-password') {
+        return '/change-password';
+      }
+      if (loggedIn && !authState.user!.mustChangePassword && location == '/change-password') {
+        return '/bookings';
+      }
 
       if (loggedIn && location == '/login') {
         final user = authState.user!;
@@ -48,7 +59,8 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       if (loggedIn &&
           location != '/login' &&
-          location != '/branch-select') {
+          location != '/branch-select' &&
+          location != '/change-password') {
         final user = authState.user!;
         if (user.isShopAdmin && branchState.activeBranch == null) {
           return '/branch-select';
@@ -62,6 +74,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/login',
         builder: (context, state) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: '/forgot-password',
+        builder: (context, state) => const ForgotPasswordScreen(),
+      ),
+      GoRoute(
+        path: '/change-password',
+        builder: (context, state) => const ChangePasswordScreen(),
       ),
       GoRoute(
         path: '/branch-select',

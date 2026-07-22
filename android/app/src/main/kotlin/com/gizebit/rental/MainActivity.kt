@@ -1,4 +1,4 @@
-package com.fisha.guest_wish_app
+package com.gizebit.rental
 
 import io.flutter.embedding.android.FlutterActivity
 
